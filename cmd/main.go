@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/RakhimovAns/Calculus/Initializers"
 	"github.com/RakhimovAns/Calculus/models"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -11,13 +10,10 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
-func init() {
-	Initializers.ConnectToDB()
-	Initializers.CreateTable()
-}
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -52,7 +48,7 @@ func PostExpression(c *gin.Context) {
 
 func IsValidate(expression string) error {
 	size := len(expression)
-	if !(expression[0] >= '0' && expression[0] <= '9') {
+	if size == 0 || !(expression[0] >= '0' && expression[0] <= '9') {
 		return errors.New("invalid format of expression")
 	}
 	if !(expression[size-1] >= '0' && expression[size-1] <= '9') {
@@ -92,22 +88,30 @@ func EvaluateExpression(expression string, AddTime, SubTime, MultiplyTime, Divid
 	}
 	operands = append(operands, num)
 
-	resultCh := make(chan float64)
+	resultCh := make(chan float64, len(operators))
 	errCh := make(chan error)
+
+	var wg sync.WaitGroup
 
 	for i := 0; i < len(operators); {
 		switch operators[i] {
 		case '*':
-			go MultiplyAsync(operands, i, MultiplyTime, resultCh, errCh)
+			wg.Add(1)
+			go MultiplyAsync(operands, i, MultiplyTime, resultCh, errCh, &wg)
 		case '/':
-			go DivideAsync(operands, i, DivideTime, resultCh, errCh)
+			wg.Add(1)
+			go DivideAsync(operands, i, DivideTime, resultCh, errCh, &wg)
 		case '+':
-			go AddAsync(operands, i, AddTime, resultCh, errCh)
+			wg.Add(1)
+			go AddAsync(operands, i, AddTime, resultCh, errCh, &wg)
 		case '-':
-			go SubtractAsync(operands, i, SubTime, resultCh, errCh)
+			wg.Add(1)
+			go SubtractAsync(operands, i, SubTime, resultCh, errCh, &wg)
 		}
 		i++
 	}
+
+	wg.Wait()
 	var result float64
 	for range operators {
 		select {
@@ -121,25 +125,29 @@ func EvaluateExpression(expression string, AddTime, SubTime, MultiplyTime, Divid
 	return result, nil
 }
 
-func AddAsync(operands []float64, i int, Timer int64, resultCh chan<- float64, errCh chan<- error) {
+func AddAsync(operands []float64, i int, Timer int64, resultCh chan<- float64, errCh chan<- error, wg *sync.WaitGroup) {
+	defer wg.Done()
 	time.Sleep(time.Duration(Timer) * time.Second)
 	operands[i] += operands[i+1]
 	resultCh <- operands[i]
 }
 
-func SubtractAsync(operands []float64, i int, Timer int64, resultCh chan<- float64, errCh chan<- error) {
+func SubtractAsync(operands []float64, i int, Timer int64, resultCh chan<- float64, errCh chan<- error, wg *sync.WaitGroup) {
+	defer wg.Done()
 	time.Sleep(time.Duration(Timer) * time.Second)
 	operands[i] -= operands[i+1]
 	resultCh <- operands[i]
 }
 
-func MultiplyAsync(operands []float64, i int, Timer int64, resultCh chan<- float64, errCh chan<- error) {
+func MultiplyAsync(operands []float64, i int, Timer int64, resultCh chan<- float64, errCh chan<- error, wg *sync.WaitGroup) {
+	defer wg.Done()
 	time.Sleep(time.Duration(Timer) * time.Second)
 	operands[i] *= operands[i+1]
 	resultCh <- operands[i]
 }
 
-func DivideAsync(operands []float64, i int, Timer int64, resultCh chan<- float64, errCh chan<- error) {
+func DivideAsync(operands []float64, i int, Timer int64, resultCh chan<- float64, errCh chan<- error, wg *sync.WaitGroup) {
+	defer wg.Done()
 	time.Sleep(time.Duration(Timer) * time.Second)
 	if operands[i+1] == 0 {
 		errCh <- errors.New("division by zero")
