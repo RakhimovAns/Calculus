@@ -1,6 +1,7 @@
 package models
 
 type Expression struct {
+	ID           int64
 	Expression   string `json:"expression"`
 	AddTime      int64  `json:"addTime"`
 	SubTime      int64  `json:"subTime"`

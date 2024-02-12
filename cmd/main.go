@@ -3,17 +3,21 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/RakhimovAns/Calculus/Initializers"
+	"github.com/RakhimovAns/Calculus/govaluate"
 	"github.com/RakhimovAns/Calculus/models"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
-	"sync"
 	"time"
 )
 
+func init() {
+	Initializers.ConnectToDB()
+	Initializers.CreateTable()
+}
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -36,13 +40,13 @@ func PostExpression(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid format of expression"})
 		return
 	}
-
-	result, err := EvaluateExpression(expression.Expression, expression.AddTime, expression.SubTime, expression.MultiplyTime, expression.DivideTime)
+	id := Initializers.CreateModel(expression)
+	c.JSON(http.StatusOK, gin.H{"Your ID": id})
+	result, err := CountExpression(expression)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{"result": result})
 }
 
@@ -62,97 +66,33 @@ func IsValidate(expression string) error {
 	return nil
 }
 
-func EvaluateExpression(expression string, AddTime, SubTime, MultiplyTime, DivideTime int64) (float64, error) {
-	var operands []float64
-	var operators []rune
-	numStr := ""
-
-	for _, char := range expression {
-		switch char {
-		case '+', '-', '*', '/':
-			num, err := strconv.ParseFloat(numStr, 64)
-			if err != nil {
-				return 0, err
-			}
-			operands = append(operands, num)
-			operators = append(operators, char)
-			numStr = ""
-		default:
-			numStr += string(char)
-		}
-	}
-
-	num, err := strconv.ParseFloat(numStr, 64)
+func CountExpression(expression models.Expression) (interface{}, error) {
+	expr, err := govaluate.NewEvaluableExpression(expression.Expression)
 	if err != nil {
-		return 0, err
+		return -1, errors.New("error with parsing")
 	}
-	operands = append(operands, num)
-
-	resultCh := make(chan float64, len(operators))
-	errCh := make(chan error)
-
-	var wg sync.WaitGroup
-
-	for i := 0; i < len(operators); {
-		switch operators[i] {
-		case '*':
-			wg.Add(1)
-			go MultiplyAsync(operands, i, MultiplyTime, resultCh, errCh, &wg)
-		case '/':
-			wg.Add(1)
-			go DivideAsync(operands, i, DivideTime, resultCh, errCh, &wg)
-		case '+':
-			wg.Add(1)
-			go AddAsync(operands, i, AddTime, resultCh, errCh, &wg)
-		case '-':
-			wg.Add(1)
-			go SubtractAsync(operands, i, SubTime, resultCh, errCh, &wg)
-		}
-		i++
+	result, err := expr.Evaluate(nil)
+	if err != nil {
+		return -1, errors.New("error evaluating expression")
 	}
-
-	wg.Wait()
-	var result float64
-	for range operators {
-		select {
-		case res := <-resultCh:
-			result = res
-		case err := <-errCh:
-			return 0, err
-		}
-	}
-
+	Time := FindTime(expression)
+	time.Sleep(time.Duration(Time) * time.Second)
 	return result, nil
 }
 
-func AddAsync(operands []float64, i int, Timer int64, resultCh chan<- float64, errCh chan<- error, wg *sync.WaitGroup) {
-	defer wg.Done()
-	time.Sleep(time.Duration(Timer) * time.Second)
-	operands[i] += operands[i+1]
-	resultCh <- operands[i]
-}
-
-func SubtractAsync(operands []float64, i int, Timer int64, resultCh chan<- float64, errCh chan<- error, wg *sync.WaitGroup) {
-	defer wg.Done()
-	time.Sleep(time.Duration(Timer) * time.Second)
-	operands[i] -= operands[i+1]
-	resultCh <- operands[i]
-}
-
-func MultiplyAsync(operands []float64, i int, Timer int64, resultCh chan<- float64, errCh chan<- error, wg *sync.WaitGroup) {
-	defer wg.Done()
-	time.Sleep(time.Duration(Timer) * time.Second)
-	operands[i] *= operands[i+1]
-	resultCh <- operands[i]
-}
-
-func DivideAsync(operands []float64, i int, Timer int64, resultCh chan<- float64, errCh chan<- error, wg *sync.WaitGroup) {
-	defer wg.Done()
-	time.Sleep(time.Duration(Timer) * time.Second)
-	if operands[i+1] == 0 {
-		errCh <- errors.New("division by zero")
-		return
+func FindTime(expression models.Expression) int64 {
+	result := int64(0)
+	for _, char := range expression.Expression {
+		switch char {
+		case '+':
+			result += expression.AddTime
+		case '-':
+			result += expression.SubTime
+		case '/':
+			result += expression.DivideTime
+		case '*':
+			result += expression.MultiplyTime
+		}
 	}
-	operands[i] /= operands[i+1]
-	resultCh <- operands[i]
+	return result
 }

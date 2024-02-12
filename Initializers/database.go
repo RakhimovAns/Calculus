@@ -1,6 +1,7 @@
 package Initializers
 
 import (
+	"github.com/RakhimovAns/Calculus/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
@@ -10,15 +11,16 @@ import (
 
 var DB *gorm.DB
 
-type Expression struct {
-	ID           int `gorm:"primaryKey;autoIncrement"`
-	Expression   string
-	AddTime      time.Time `gorm:"type:timestamp"`
-	SubTime      time.Time `gorm:"type:timestamp"`
-	MultiplyTime time.Time `gorm:"type:timestamp"`
-	DivideTime   time.Time `gorm:"type:timestamp"`
-	Created      time.Time `gorm:"type:timestamp"`
-	Finished     time.Time `gorm:"type:timestamp"`
+type expression struct {
+	ID           int            `gorm:"primaryKey;autoIncrement"`
+	Expression   string         `gorm:"type:text"`
+	AddTime      int64          `gorm:"type:integer"`
+	SubTime      int64          `gorm:"type:integer"`
+	MultiplyTime int64          `gorm:"type:integer"`
+	DivideTime   int64          `gorm:"type:integer"`
+	Created      time.Time      `gorm:"type:timestamp"`
+	Finished     time.Time      `gorm:"type:timestamp;default:null"`
+	DeletedAt    gorm.DeletedAt `gorm:"index;"`
 }
 
 func ConnectToDB() {
@@ -31,8 +33,15 @@ func ConnectToDB() {
 	}
 }
 func CreateTable() {
-	err := DB.AutoMigrate(&Expression{})
+	err := DB.AutoMigrate(&expression{})
 	if err != nil {
 		log.Fatal("failed to migrate")
 	}
+}
+
+func CreateModel(expression models.Expression) int64 {
+	DB.Create(&models.Expression{Expression: expression.Expression, AddTime: expression.AddTime, SubTime: expression.SubTime, DivideTime: expression.DivideTime, MultiplyTime: expression.MultiplyTime})
+	DB.Table("expressions").Where("expression=? AND add_time=? AND sub_time=? AND multiply_time=? AND divide_time=?", expression.Expression, expression.AddTime, expression.SubTime, expression.MultiplyTime, expression.DivideTime).Find(&expression)
+	return expression.ID
+	
 }
