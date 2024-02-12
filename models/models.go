@@ -7,4 +7,6 @@ type Expression struct {
 	SubTime      int64  `json:"subTime"`
 	MultiplyTime int64  `json:"multiplyTime"`
 	DivideTime   int64  `json:"divideTime"`
+	IsCounted    bool
+	Result       int64
 }

@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -27,6 +28,8 @@ func main() {
 	fmt.Println(port)
 	r := gin.Default()
 	r.POST("/expression", PostExpression)
+	r.POST("/expression/:id", StartCount)
+	r.GET("/expression/:id", GetStatus)
 	r.Run()
 }
 
@@ -42,14 +45,30 @@ func PostExpression(c *gin.Context) {
 	}
 	id := Initializers.CreateModel(expression)
 	c.JSON(http.StatusOK, gin.H{"Your ID": id})
+}
+func StartCount(c *gin.Context) {
+	id := c.Param("id")
+	ID, _ := strconv.Atoi(id)
+	expression := Initializers.GetByID(int64(ID))
 	result, err := CountExpression(expression)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"result": result})
+	Initializers.SetResult(int64(ID), result)
+	c.JSON(http.StatusOK, gin.H{"Your result": result})
 }
 
+func GetStatus(c *gin.Context) {
+	id := c.Param("id")
+	ID, _ := strconv.Atoi(id)
+	expression := Initializers.GetByID(int64(ID))
+	if expression.IsCounted == true {
+		c.JSON(http.StatusOK, gin.H{"Your result": expression.Result})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"Your result:": "counting"})
+	}
+}
 func IsValidate(expression string) error {
 	size := len(expression)
 	if size == 0 || !(expression[0] >= '0' && expression[0] <= '9') {
