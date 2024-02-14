@@ -1,1 +1,0 @@
-//For Time if zero make error
