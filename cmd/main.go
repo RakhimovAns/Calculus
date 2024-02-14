@@ -27,10 +27,12 @@ func main() {
 	port := os.Getenv("PORT")
 	fmt.Println(port)
 	r := gin.Default()
-	r.StaticFile("/expression", "./index.html")
+	r.StaticFile("/expression", "./static/index.html")
+	r.StaticFile("/calculate", "./static/calculate.html")
+	r.StaticFile("/result", "./static/result.html")
 	r.POST("/expression", PostExpression)
-	r.POST("/calculate", StartCount)
-	r.GET("/expression/:id", GetStatus)
+	r.POST("/calculate/:id", StartCount)
+	r.GET("/result/:id", GetStatus)
 	r.Run()
 }
 
@@ -51,6 +53,10 @@ func StartCount(c *gin.Context) {
 	id := c.Param("id")
 	ID, _ := strconv.Atoi(id)
 	expression := Initializers.GetByID(int64(ID))
+	if len(expression.Expression) == 0 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "non-existent ID"})
+		return
+	}
 	result, err := CountExpression(expression)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

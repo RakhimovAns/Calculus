@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Status</title>
+</head>
+<body>
+<h1>Check Status</h1>
+<form id="statusForm">
+    <label for="id">Enter ID:</label>
+    <input type="text" id="id" name="id" required>
+    <button type="submit">Check Status</button>
+</form>
+<div id="result"></div>
+
+<script>
+    document.getElementById('statusForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const id = document.getElementById('id').value;
+
+        const response = await fetch(`/result/${id}`, {
+            method: 'GET'
+        });
+
+        const data = await response.json();
+        if (data.hasOwnProperty('Your result')) {
+            document.getElementById('result').innerText = `Result: ${data['Your result']}`;
+        } else {
+            document.getElementById('result').innerText = `Expression is still being calculated`;
+        }
+    });
+</script>
+</body>
+</html>

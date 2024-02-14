@@ -10,3 +10,6 @@ type Expression struct {
 	IsCounted    bool
 	Result       int64
 }
+type ID struct {
+	ID int64 `json:"id"`
+}

@@ -32,7 +32,6 @@
         const multiplyTime = parseInt(document.getElementById('multiplyTime').value);
         const divideTime = parseInt(document.getElementById('divideTime').value);
 
-
         const response = await fetch('/expression', {
             method: 'POST',
             headers: {
@@ -47,8 +46,13 @@
             })
         });
 
-        const data = await response.json();
-        document.getElementById('result').innerText = `Your ID: ${data['Your ID']}`;
+        if (!response.ok) {
+            const errorMessage = await response.json();
+            document.getElementById('result').innerText = `Error: ${errorMessage.error}`;
+        } else {
+            const data = await response.json();
+            document.getElementById('result').innerText = `Your ID: ${data['Your ID']}`;
+        }
     });
 </script>
 </body>

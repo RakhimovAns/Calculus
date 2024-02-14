@@ -20,12 +20,17 @@
 
         const id = document.getElementById('id').value;
 
-        const response = await fetch(`/expression/${id}`, {
+        const response = await fetch(`/calculate/${id}`, {
             method: 'POST'
         });
 
-        const data = await response.json();
-        document.getElementById('result').innerText = `Calculation started for ID: ${id}`;
+        if (!response.ok) {
+            const errorMessage = await response.json();
+            document.getElementById('result').innerText = `Error: ${errorMessage.error}`;
+        } else {
+            const data = await response.json();
+            document.getElementById('result').innerText = `Calculation started for ID: ${id}`;
+        }
     });
 </script>
 </body>
