@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+</head>
+<body>
+<h1>Calculator</h1>
+<form id="expressionForm">
+    <label for="expression">Enter Expression:</label>
+    <input type="text" id="expression" name="expression" required>
+    <label for="addTime">Add Time:</label>
+    <input type="number" id="addTime" name="addTime" value="0" required>
+    <label for="subTime">Sub Time:</label>
+    <input type="number" id="subTime" name="subTime" value="0" required>
+    <label for="multiplyTime">Multiply Time:</label>
+    <input type="number" id="multiplyTime" name="multiplyTime" value="0" required>
+    <label for="divideTime">Divide Time:</label>
+    <input type="number" id="divideTime" name="divideTime" value="0" required>
+    <button type="submit">Calculate</button>
+</form>
+<div id="result"></div>
+
+<script>
+    document.getElementById('expressionForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const expression = document.getElementById('expression').value;
+        const addTime = parseInt(document.getElementById('addTime').value);
+        const subTime = parseInt(document.getElementById('subTime').value);
+        const multiplyTime = parseInt(document.getElementById('multiplyTime').value);
+        const divideTime = parseInt(document.getElementById('divideTime').value);
+
+
+        const response = await fetch('/expression', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                expression,
+                addTime,
+                subTime,
+                multiplyTime,
+                divideTime
+            })
+        });
+
+        const data = await response.json();
+        document.getElementById('result').innerText = `Your ID: ${data['Your ID']}`;
+    });
+</script>
+</body>
+</html>

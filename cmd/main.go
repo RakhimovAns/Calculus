@@ -27,8 +27,9 @@ func main() {
 	port := os.Getenv("PORT")
 	fmt.Println(port)
 	r := gin.Default()
+	r.StaticFile("/expression", "./index.html")
 	r.POST("/expression", PostExpression)
-	r.POST("/expression/:id", StartCount)
+	r.POST("/calculate", StartCount)
 	r.GET("/expression/:id", GetStatus)
 	r.Run()
 }
