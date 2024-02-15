@@ -55,3 +55,8 @@ func GetByID(ID int64) models.Expression {
 func SetResult(id, result interface{}) {
 	DB.Model(&expression{}).Where("id = ?", id).Updates(map[string]interface{}{"result": result, "is_counted": true})
 }
+
+func GetStatus(expression models.Expression) bool {
+	DB.Table("expressions").Where("expression=? AND add_time=? AND sub_time=? AND multiply_time=? AND divide_time=?", expression.Expression, expression.AddTime, expression.SubTime, expression.MultiplyTime, expression.DivideTime).Find(&expression)
+	return expression.IsCounted
+}

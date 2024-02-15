@@ -15,7 +15,7 @@ func PostExpression(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	if err := service.IsValidate(expression.Expression); err != nil {
+	if err := service.IsValidate(expression); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid format of expression"})
 		return
 	}
@@ -28,6 +28,10 @@ func StartCount(c *gin.Context) {
 	expression := Initializers.GetByID(int64(ID))
 	if len(expression.Expression) == 0 {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "non-existent ID"})
+		return
+	}
+	if Initializers.GetStatus(expression) == true {
+		c.JSON(http.StatusOK, gin.H{"message": "Your expression already has been counted"})
 		return
 	}
 	result, err := service.CountExpression(expression)

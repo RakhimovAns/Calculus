@@ -30,7 +30,11 @@
             document.getElementById('result').innerText = `Error: ${errorMessage.error}`;
         } else {
             const data = await response.json();
-            document.getElementById('result').innerText = `Calculation started for ID: ${id}`;
+            if(data['message']==="Your expression already has been counted"){
+                document.getElementById('result').innerText="Your expression already has been counted"
+            } else {
+                document.getElementById('result').innerText = `Calculation started for ID: ${id}`;
+            }
         }
     });
 
