@@ -18,7 +18,8 @@
     <input type="number" id="multiplyTime" name="multiplyTime" value="0" required>
     <label for="divideTime">Divide Time:</label>
     <input type="number" id="divideTime" name="divideTime" value="0" required>
-    <button type="submit">Calculate</button>
+    <button type="submit">Save</button>
+    <button id="calculationButton" type="button">Calculation</button>
 </form>
 <div id="result"></div>
 
@@ -53,6 +54,10 @@
             const data = await response.json();
             document.getElementById('result').innerText = `Your ID: ${data['Your ID']}`;
         }
+    });
+
+    document.getElementById('calculationButton').addEventListener('click', function() {
+        window.location.href = 'http://localhost:8080/calculate';
     });
 </script>
 </body>

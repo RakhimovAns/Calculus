@@ -12,6 +12,7 @@
     <input type="text" id="id" name="id" required>
     <button type="submit">Start Calculation</button>
 </form>
+<button id="resultButton">Result</button>
 <div id="result"></div>
 
 <script>
@@ -31,6 +32,10 @@
             const data = await response.json();
             document.getElementById('result').innerText = `Calculation started for ID: ${id}`;
         }
+    });
+
+    document.getElementById('resultButton').addEventListener('click', function() {
+        window.location.href = 'http://localhost:8080/result';
     });
 </script>
 </body>
